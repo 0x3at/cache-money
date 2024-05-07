@@ -54,7 +54,6 @@ def app():
 
 @pytest.fixture()
 def db_session(app):
-    """Provides an isolated database session for each test function."""
     with app.app_context():
         db.session.begin_nested()
         yield db.session

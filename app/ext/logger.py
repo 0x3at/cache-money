@@ -45,5 +45,5 @@ def register_extension(app):
 
     app.logger = logger
     app.logger.info("Logger extension registered.")
-    
+
     return app

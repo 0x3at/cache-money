@@ -13,4 +13,5 @@ def create_app():
     database.register_extension(app)
     logger.register_extension(app)
 
+    app.logger.info("App pipeline finished building!")
     return app

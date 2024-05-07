@@ -20,7 +20,7 @@ class UserRepository:
         last_name: str,
         mobile: str,
         address: str,
-    )-> bool:
+    ) -> bool:
         unique_args = {"username": username, "email": email, "mobile": mobile}
 
         for key, values in unique_args.items():
@@ -46,7 +46,7 @@ class UserRepository:
             return False
 
         return True
-    
+
     @staticmethod
     def authenticate_user(username: str, password: str):
         user = User.query.filter_by(username=username).first()
@@ -81,7 +81,7 @@ class UserRepository:
         user = User.query.filter_by(username=username).first()
         if address is None and email is None and mobile is None:
             return False
-        
+
         if not user:
             app.logger.error(
                 f"User: {username} was attempted to be updated but does not exist!"
@@ -126,21 +126,25 @@ class UserRepository:
         return True
 
     @staticmethod
-    def change_username(new_username: str, old_username: str|None=None, id: int|None=None):
+    def change_username(
+        new_username: str, old_username: str | None = None, id: int | None = None
+    ):
         if old_username == None and id == None:
-            app.logger.error(f"Username Change Failed: User {id} attempted to change username to {new_username} but no ID or Username was provided!")
+            app.logger.error(
+                f"Username Change Failed: User {id} attempted to change username to {new_username} but no ID or Username was provided!"
+            )
             return False
         if User.query.filter_by(username=new_username).first():
             app.logger.error(
                 f"Username Change Failed: User {id} attempted to change username to {new_username} but it already exists!"
             )
             return False
-        
+
         if old_username == None:
             user = User.query.get(id)
         else:
             user = User.query.filter_by(username=old_username).first()
-            
+
         if not user:
             app.logger.error(f"Username Change Failed: User {id} does not exist!")
             return False
@@ -154,20 +158,22 @@ class UserRepository:
             app.logger.error(f"Error updating User: {id} with error: {e}")
             db.session.rollback()
             return False
-        
+
         return True
 
     @staticmethod
     def disable_user(username: str | None = None, id: str | None = None):
         if username == None and id == None:
-            app.logger.error(f"User: {id} was attempted to be disabled but no ID or Username was provided!")
+            app.logger.error(
+                f"User: {id} was attempted to be disabled but no ID or Username was provided!"
+            )
             return False
-        
+
         if username:
             user = User.query.filter_by(username=username).first()
         else:
             user = User.query.get(id)
-        
+
         if not user:
             app.logger.error(
                 f"User: {username} was attempted to be disabled but does not exist!"
@@ -181,20 +187,22 @@ class UserRepository:
             app.logger.error(f"Error disabling User: {username} with error: {e}")
             db.session.rollback()
             return False
-        
+
         return True
 
     @staticmethod
     def enable_user(username: str | None = None, id: str | None = None):
         if username == None and id == None:
-            app.logger.error(f"User: {id} was attempted to be enabled but no ID or Username was provided!")
+            app.logger.error(
+                f"User: {id} was attempted to be enabled but no ID or Username was provided!"
+            )
             return False
-        
+
         if username:
             user = User.query.filter_by(username=username).first()
         else:
             user = User.query.get(id)
-        
+
         if not user:
             app.logger.error(
                 f"User: {username} was attempted to be enabled but does not exist!"
@@ -208,7 +216,7 @@ class UserRepository:
             app.logger.error(f"Error enabling User: {username} with error: {e}")
             db.session.rollback()
             return False
-            
+
         return True
 
 
@@ -216,6 +224,12 @@ class AccountRepository:
     @staticmethod
     def create_bank_account(user_id: int, account_type: str, interest_rate: float):
         account_number = token_hex(16)
+        if not User.query.get(user_id):
+            app.logger.error(
+                f"Account attempted to be created with user ID: {user_id}, however User does not exist!"
+            )
+            return False
+
         if Account.query.filter_by(account_number=account_number).first():
             app.logger.error(
                 f"Account attempted to be created with account number: {account_number}, however Account already exists! Retrying..."
@@ -241,7 +255,7 @@ class AccountRepository:
                 f"Error creating Account: {account_number} with error: {e}"
             )
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -252,7 +266,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be retrieved but does not exist!"
             )
-            return None
+            return False
 
         return account
 
@@ -261,7 +275,7 @@ class AccountRepository:
         accounts = Account.query.filter_by(user_id=user_id).all()
         if not accounts:
             app.logger.error(f"User: {user_id} does not have any accounts!")
-            return None
+            return False
 
         return accounts
 
@@ -272,7 +286,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be updated but does not exist!"
             )
-            return None
+            return False
 
         previous_balance = account.balance
         account.balance += amount
@@ -284,7 +298,7 @@ class AccountRepository:
         except SQLAlchemyError as e:
             app.logger.error(f"Error updating Account: {account_id} with error: {e}")
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -295,7 +309,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be updated but does not exist!"
             )
-            return None
+            return False
 
         previous_interest = account.interest_rate
         account.interest_rate = new_interest_rate
@@ -308,7 +322,9 @@ class AccountRepository:
         except SQLAlchemyError as e:
             app.logger.error(f"Error updating Account: {account_id} with error: {e}")
             db.session.rollback()
-            return None
+            return False
+
+        return True
 
     @staticmethod
     def disable_account(account_id: int):
@@ -317,7 +333,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be disabled but does not exist!"
             )
-            return None
+            return False
         else:
             account.status = "disabled"
         try:
@@ -326,7 +342,7 @@ class AccountRepository:
         except SQLAlchemyError as e:
             app.logger.error(f"Error disabling Account: {account_id} with error: {e}")
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -337,7 +353,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be enabled but does not exist!"
             )
-            return None
+            return False
         else:
             account.status = "active"
         try:
@@ -346,7 +362,7 @@ class AccountRepository:
         except SQLAlchemyError as e:
             app.logger.error(f"Error enabling Account: {account_id} with error: {e}")
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -357,7 +373,7 @@ class AccountRepository:
             app.logger.error(
                 f"Account: {account_id} was attempted to be flagged but does not exist!"
             )
-            return None
+            return False
         else:
             account.status = "flagged"
         try:
@@ -366,7 +382,7 @@ class AccountRepository:
         except SQLAlchemyError as e:
             app.logger.error(f"Error flagging Account: {account_id} with error: {e}")
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -377,37 +393,47 @@ class TransactionRepository:
         account_id: int,
         amount: float,
         description: str,
-        status: str,
         transaction_type: str,
     ):
+        if not Account.query.get(account_id):
+            app.logger.error(
+                f"Transaction attempted to be created with account ID: {account_id}, however Account does not exist!"
+            )
+            return False
+
         # ? Known issue with db.Model and pylint - https://github.com/pallets-eco/flask-sqlalchemy/issues/1312#issue-2127942077
         post_tx_balance: float = float(
-            Account.query.get(account_id).balance + amount # type:ignore
+            Account.query.get(account_id).balance + amount  # type:ignore
         )  # type:ignore
         try:
             transaction = Transaction(
                 account_id=account_id,
-                transaction_id=f"{account_id}_{token_hex(4)}",
+                transaction_id=f"{token_hex(8)}",
                 amount=amount,
                 description=description,
                 transaction_type=transaction_type,
                 post_tx_balance=post_tx_balance,
             )  # type:ignore
+            db.session.add(transaction)
+            db.session.commit()
+            app.logger.info(
+                f"{transaction.transaction_type} Transaction created successfully with ID: {transaction.id}!"
+            )
         except SQLAlchemyError as e:
             app.logger.error(f"Error creating Transaction: {e}")
             db.session.rollback()
-            return None
+            return False
 
         return True
 
     @staticmethod
     def get_transaction_by_id(transaction_id: int):
-        transaction = Transaction.query.get(transaction_id)
+        transaction = Transaction.query.filter_by(transaction_id=transaction_id).first()
         if not transaction:
             app.logger.error(
                 f"Transaction: {transaction_id} was attempted to be retrieved but does not exist!"
             )
-            return None
+            return False
 
         return transaction
 
@@ -416,7 +442,7 @@ class TransactionRepository:
         transactions = Transaction.query.filter_by(account_id=account_id).all()
         if not transactions:
             app.logger.error(f"Account: {account_id} does not have any transactions!")
-            return None
+            return False
 
         return transactions
 
@@ -430,12 +456,12 @@ class TransactionRepository:
             "refunded",
             "flagged",
         ]
-        transaction = Transaction.query.get(transaction_id)
+        transaction = Transaction.query.filter_by(transaction_id=transaction_id).first()
         if not transaction:
             app.logger.error(
                 f"Transaction: {transaction_id} was attempted to be updated but does not exist!"
             )
-            return None
+            return False
 
         transaction.status = status_list[status]
         try:
@@ -448,7 +474,7 @@ class TransactionRepository:
                 f"Error updating Transaction: {transaction_id} with error: {e}"
             )
             db.session.rollback()
-            return None
+            return False
 
         return True
 
@@ -459,7 +485,7 @@ class TransactionRepository:
         )
         if not transactions:
             app.logger.error(f"Account: {account_id} does not have any transactions!")
-            return None
+            return False
 
         return transactions
 
@@ -472,6 +498,6 @@ class TransactionRepository:
             app.logger.error(
                 f"Account: {account_id} does not have any transactions of type {transaction_type}!"
             )
-            return None
+            return False
 
         return transactions
